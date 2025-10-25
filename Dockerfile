@@ -1,15 +1,28 @@
-# Step 1: Use an official Java runtime as a base image
-FROM openjdk:21-jdk
-
-# Step 2: Set the working directory inside the container
+# Stage 1: Build the Spring Boot JAR using Maven
+FROM maven:3.9.0-eclipse-temurin-17 AS build
 WORKDIR /app
 
-# Step 3: Copy the built JAR file into the container
-COPY target/Booking-0.0.1-SNAPSHOT.jar app.jar
+# Copy pom.xml first to leverage Docker cache
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
 
-# Step 4: Expose the port your Spring Boot app runs on (default 8080)
+# Copy the source code
+COPY src ./src
+
+# Build the JAR (skip tests to speed up)
+RUN mvn clean package -DskipTests
+
+# Stage 2: Run the Spring Boot app with Java 21
+FROM eclipse-temurin:21-jdk-slim
+WORKDIR /app
+
+# Copy the built JAR from the previous stage
+COPY --from=build /app/target/*.jar app.jar
+
+# Expose the port your app runs on
 EXPOSE 8080
 
-# Step 5: Command to run the JAR
+# Start the Spring Boot application
 ENTRYPOINT ["java", "-jar", "app.jar"]
+
 
