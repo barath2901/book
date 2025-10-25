@@ -1,14 +1,19 @@
-# Step 1: Use an official Java runtime as a base image
-FROM openjdk:21-jdk
-
-# Step 2: Set the working directory inside the container
+# Stage 1: Build
+FROM eclipse-temurin:21-jdk AS build
 WORKDIR /app
 
-# Step 3: Copy the built JAR file into the container
-COPY target/*.jar app.jar
+# Install Maven manually (if Maven not included)
+RUN apt-get update && \
+    apt-get install -y maven && \
+    rm -rf /var/lib/apt/lists/*
 
-# Step 4: Expose the port your Spring Boot app runs on (default 8080)
-EXPOSE 8080
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+COPY src ./src
+RUN mvn clean package -DskipTests
 
-# Step 5: Command to run the JAR
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Stage 2: Run
+FROM eclipse-temurin:21-jdk-alpine
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
+ENTRYPOINT ["java","-jar","app.jar"]
