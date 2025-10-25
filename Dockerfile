@@ -1,28 +1,14 @@
-# Stage 1: Build the Spring Boot JAR using Maven
-FROM maven:3.9.0-eclipse-temurin-17 AS build
+# Step 1: Use an official Java runtime as a base image
+FROM openjdk:21-jdk
+
+# Step 2: Set the working directory inside the container
 WORKDIR /app
 
-# Copy pom.xml first to leverage Docker cache
-COPY pom.xml .
-RUN mvn dependency:go-offline -B
+# Step 3: Copy the built JAR file into the container
+COPY target/*.jar app.jar
 
-# Copy the source code
-COPY src ./src
-
-# Build the JAR (skip tests to speed up)
-RUN mvn clean package -DskipTests
-
-# Stage 2: Run the Spring Boot app with Java 21
-FROM eclipse-temurin:17-jdk-slim
-WORKDIR /app
-
-# Copy the built JAR from the previous stage
-COPY --from=build /app/target/*.jar app.jar
-
-# Expose the port your app runs on
+# Step 4: Expose the port your Spring Boot app runs on (default 8080)
 EXPOSE 8080
 
-# Start the Spring Boot application
+# Step 5: Command to run the JAR
 ENTRYPOINT ["java", "-jar", "app.jar"]
-
-
