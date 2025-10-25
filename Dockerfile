@@ -13,7 +13,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Stage 2: Run the Spring Boot app with Java 21
-FROM eclipse-temurin:21-jdk-slim
+FROM eclipse-temurin:17-jdk-slim
 WORKDIR /app
 
 # Copy the built JAR from the previous stage
